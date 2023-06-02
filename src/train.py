@@ -17,16 +17,15 @@ from torchvision.utils import make_grid
 
 
 DATA_DIR = '../data/'
-BATCH_SIZE = 12
+BATCH_SIZE = 16
 PATH = "../models/model.pth"
 
 # MAKE SURE CLASSES ARE IN THE SAME ORDER THEY ARE IN ../data/
 # Put the classes that are in the ../data folder
-CLASSES = ("AUBREY", "BASIL-STRANGER", "HERO", "KEL", "MARI", "SUNNY-OMORI")
+CLASSES = ("AUBREY", "BASIL-STRANGER", "HERO", "KEL", "MARI", "SUNNY-OMORI",)
 
-DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-# Assuming that we are on a CUDA machine, this should print a CUDA device:
-print(DEVICE)
+DEVICE = "cpu"
+
 
 def im_show(img):
 
@@ -34,9 +33,19 @@ def im_show(img):
     Show a Image with matplotlib
     """
     img = img / 2 + 0.5
-    npimg = img.numpy()
+    npimg = img.cpu().numpy()
     plt.imshow(np.transpose(npimg, (1, 2, 0)))
     plt.show()
+
+def try_gpu(input_n, device):
+    """
+    Try to use the GPU to train, test, and score on if called
+    """
+    if input_n != 0:
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    print(device)
+
+
 
 def load_data(data=DATA_DIR):
 
@@ -67,6 +76,8 @@ class CNN(nn.Module):
     def __init__(self, data_dir):
         super().__init__()
 
+        self.train_loader, self.test_loader = load_data(data_dir)
+
         self.conv_layers = nn.ModuleList([
              nn.Conv2d(3, 8, kernel_size=(3,3), padding="same"),
              nn.MaxPool2d(kernel_size=(2,2), stride=(2,2)),
@@ -84,10 +95,11 @@ class CNN(nn.Module):
               nn.Linear(64,6)
             ])
 
-        self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.SGD(self.parameters(), lr=0.001, momentum=0.9)
-        self.train_loader, self.test_loader = load_data(data_dir)
+        # Train on GPU
+        self.to(DEVICE)
 
+        self.criterion = nn.CrossEntropyLoss().to(DEVICE)
+        self.optimizer = optim.SGD(self.parameters(), lr=0.001, momentum=0.9)
 
     def forward(self, data_x):
         """
@@ -124,7 +136,8 @@ class CNN(nn.Module):
             running_loss = 0.0
 
             for i, data in enumerate(self.train_loader, 0):
-                inputs, labels = data
+                # Train on GPU
+                inputs, labels = data[0].to(DEVICE), data[1].to(DEVICE)
                 self.optimizer.zero_grad()
 
                 # outputs = self(inputs)
@@ -158,17 +171,19 @@ class CNN(nn.Module):
         Test the model on 0.2(20% of the data)
         """
         self.load_state_dict(torch.load(path))
-        dataiter = iter(self.test_loader)
-        images, labels = next(dataiter)
+        self.to(DEVICE)
+        # self.eval()
+        with torch.no_grad():
+            for images, labels in self.test_loader:
+                images = images.to(DEVICE)
+                labels = labels.to(DEVICE)
 
-        # print images
-        outputs = self(images)
-        print(len(images))
-        _, predicted = torch.max(outputs, 1)
-        print('Predicted: ', ' '.join(f'{CLASSES[predicted[j]]:5s}'
-                              for j in range(len(images))))
-        print('Actual: ', ' '.join(f'{CLASSES[labels[j]]:5s}' for j in range(len(images))))
-        im_show(make_grid(images))
+                outputs = self(images)
+                _, predicted = torch.max(outputs, 1)
+
+                print('Predicted: ',' '.join(f'{CLASSES[predicted[j]]:5s}' for j in range(len(images))))
+                print('Actual: ', ' '.join(f'{CLASSES[labels[j]]:5s}' for j in range(len(images))))
+                im_show(make_grid(images))
 
     def score(self):
 
@@ -182,7 +197,7 @@ class CNN(nn.Module):
         with torch.no_grad():
 
             for data in self.test_loader:
-                images, labels = data
+                images, labels = data[0].to(DEVICE), data[1].to(DEVICE)
                 outputs = self(images)
                 _, predictions = torch.max(outputs, 1)
 
@@ -201,4 +216,3 @@ class CNN(nn.Module):
 
         total_accuracy = total_accuracy / len(CLASSES)
         print(f"Total Accuracy: {total_accuracy:.2f}%")
-        return total_accuracy

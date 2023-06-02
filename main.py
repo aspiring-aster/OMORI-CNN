@@ -6,7 +6,7 @@ using PyTorch
 """
 import argparse
 
-from src.train import CNN
+from src.train import CNN, DEVICE, try_gpu
 
 
 def parse_args():
@@ -21,6 +21,8 @@ def parse_args():
                         default=0, type=int)
     parser.add_argument("--epochs", '-e',
                         default=500, type=int)
+    parser.add_argument("--gpu", '-g',
+                        default=0, type=int)
     parser.add_argument("--model-path", '-m',
                         default="./models/model1.pth", type=str)
     parser.add_argument("--data-dir", '-d',
@@ -35,6 +37,8 @@ def main(args):
     """
 
     network = CNN(args.data_dir)
+    if args.gpu != 0:
+        try_gpu(args.gpu, DEVICE)
     if args.action == "train":
         network.train(args.model_path,args.epochs)
     elif args.action == "test":
