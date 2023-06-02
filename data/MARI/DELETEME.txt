@@ -1,0 +1,5 @@
+put images of MARI labeled imageN.png where N is the number
+ex)
+image1.jpg
+image2.png
+image3.jpeg

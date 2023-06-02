@@ -1,0 +1,30 @@
+PUT CLASSES HERE
+- each class should be a folder
+- every image in class should be labeld image1.png, image2.png...
+
+ex)
+
+--- ./data 
+    -- ./AUBREY
+        -- image1.png
+        -- image2.png
+
+    -- ./BASIL-STRANGER
+        -- image1.png
+        -- image2.png
+
+    -- ./HERO
+        -- image1.png
+        -- image2.png
+
+    -- ./KEL
+        -- image1.png
+        -- image2.png
+
+    -- ./MARI
+        -- image1.png
+        -- image2.png
+
+    -- ./HERO
+        -- image1.png
+        -- image2.png
