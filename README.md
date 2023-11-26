@@ -1,2 +1,2 @@
 # OMORI-CNN
-A convolutional neural network mean't to classify OMORI characters
+A convolutional neural network meant to classify OMORI characters
